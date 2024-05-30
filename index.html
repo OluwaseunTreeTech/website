@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Technologies</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background-color: var(--container-bg-color);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    h1 {
+      background-color: green;
+      color: white;
+      padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+    .input-container {
+      display: flex;
+      padding: 20px;
+      border-top: 1px solid #ccc;
+      background-color: var(--input-bg-color);
+    }
+    .input-container input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: var(--input-bg-color);
+      color: var(--text-color);
+    }
+    .input-container button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      background-color: green;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .input-container button:hover {
+      background-color: darkgreen;
+    }
+    .chat-history {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+      background-color: var(--chat-bg-color);
+    }
+    .chat-message {
+      margin-bottom: 20px;
+    }
+    .user-message {
+      text-align: right;
+      font-weight: bold;
+      color: green;
+    }
+    .model-response {
+      font-style: italic;
+    }
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: green;
+      animation: spin 1s ease infinite;
+      margin: 10px auto;
+    }
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    :root {
+      --background-color: #f4f4f9;
+      --container-bg-color: white;
+      --input-bg-color: #ffffff;
+      --chat-bg-color: #f9f9f9;
+      --text-color: #000000;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background-color: #1c1c1e;
+        --container-bg-color: #2c2c2e;
+        --input-bg-color: #3a3a3c;
+        --chat-bg-color: #3a3a3c;
+        --text-color: #ffffff;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tree Tech AI</h1>
+    <div id="chatHistory" class="chat-history"></div>
+    <div class="input-container">
+      <input type="text" id="userInput" placeholder="Enter your question">
+      <button id="generateBtn">Send</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+  </script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    const API_KEY = 'AIzaSyCHGVc2bkr-leBFAZst7EDCapgr8rfjcX0';
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const chatHistory = document.getElementById('chatHistory');
+    const userInput = document.getElementById('userInput');
+    const generateBtn = document.getElementById('generateBtn');
+
+    let conversation = [];
+
+    async function generateText(prompt) {
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      // Add loading spinner
+      const loadingSpinner = document.createElement('div');
+      loadingSpinner.classList.add('loading-spinner');
+      chatHistory.appendChild(loadingSpinner);
+
+      try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        conversation.push({ role: 'user', text: prompt });
+        conversation.push({ role: 'model', text: text });
+
+        updateChatHistory();
+      } catch (error) {
+        console.error('Error fetching data from API:', error);
+        const errorMessage = 'Error generating text. Check console for details.';
+        conversation.push({ role: 'model', text: errorMessage });
+        updateChatHistory();
+      } finally {
+        // Remove loading spinner
+        chatHistory.removeChild(loadingSpinner);
+      }
+    }
+
+    function updateChatHistory() {
+      chatHistory.innerHTML = '';
+      conversation.forEach(message => {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message');
+        if (message.role === 'user') {
+          messageDiv.classList.add('user-message');
+          messageDiv.innerText = `User: ${message.text}`;
+        } else {
+          messageDiv.classList.add('model-response');
+          messageDiv.innerText = `Leafy: ${message.text}`;
+        }
+        chatHistory.appendChild(messageDiv);
+      });
+    }
+
+    generateBtn.addEventListener('click', () => {
+      const prompt = userInput.value;
+      if (prompt) {
+        generateText(prompt);
+        userInput.value = '';
+      }
+    });
+
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const prompt = userInput.value;
+        if (prompt) {
+          generateText(prompt);
+          userInput.value = '';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
